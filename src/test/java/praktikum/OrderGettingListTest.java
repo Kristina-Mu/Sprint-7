@@ -1,20 +1,17 @@
 package praktikum;
 
-
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.Response;
 import org.junit.Before;
 import org.junit.Test;
 import praktikum.client.OrdersClient;
-import praktikum.orders.CourierClient;
 
-
-public class ListOrderTest {
+public class OrderGettingListTest {
     OrdersClient orderClient;
 
     @Before
     public void setUp() {
-        orderClient = new CourierClient();
+        orderClient = new OrdersClient();
     }
     @Test
     @DisplayName("Проверка, что список заказов содержится в теле ответа")

@@ -2,46 +2,80 @@ package praktikum.orders;
 
 import io.restassured.response.Response;
 import praktikum.ScooterRestClient;
+import praktikum.client.Courier;
+import praktikum.client.CourierCredentials;
 
-import java.util.List;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.apache.http.HttpStatus.*;
-public class OrdersClient extends ScooterRestClient {
-    private final String ORDERS = "/api/v1/orders";
-    public Response sendPostCreateToOrders(Order order) {
-        return
-                reqSpec
-                        .and()
-                        .body(order)
-                        .when()
-                        .post(ORDERS);
-    }
-    public Response sendGetToOrders() {
-        return
-                reqSpecGet
-                        .when()
-                        .get(ORDERS);
-    }
-    public Response sendGetToTrackOrder(int track) {
-        String TRACK = "/api/v1/orders/track?t={track}";
-        return reqSpecGet
-                .pathParam("track", track)
+public class CourierClient extends ScooterRestClient {
+    private final String ROOT = "/api/v1/courier";
+    public Response postToCourierLogin(CourierCredentials courierLogin) {
+        String LOGIN = ROOT + "/login";
+        return reqSpec
+                .and()
+                .body(courierLogin)
                 .when()
-                .get(TRACK);
+                .post(LOGIN);
     }
-    public void compareResponseCodeAndBodyAboutOrderCreation(Response response) {
+    public Response postCreateToCourier(Courier courier) {
+        return reqSpec
+                .and()
+                .body(courier)
+                .when()
+                .post(ROOT);
+    }
+    public Response deleteCourier(int courierId) {
+        String json = "{\"id\": \"" + courierId + "\"}";
+        String DELETE = ROOT + "/{courierId}";
+        return reqSpec
+                .pathParam("courierId", courierId)
+                .and()
+                .body(json)
+                .when()
+                .delete(DELETE);
+    }
+    public void compareResponseCodeAndBodyAboutCreation(Response response) {
         response.then().assertThat()
                 .statusCode(SC_CREATED)
                 .and()
-                .body("track", notNullValue());
+                .body("ok", is(true));
     }
-    public void compareResponse200(Response response) {
-        response.then().assertThat().statusCode(SC_OK);
+    public void compareDeleteResponseCodeAndBodyOk(Response response) {
+        response.then().assertThat()
+                .statusCode(SC_OK)
+                .and()
+                .body("ok", is(true));
     }
-    public void isResponseBodyHaveOrdersList(Response response) {
-        response.then().assertThat().body("orders.id",notNullValue());
-        List<String> orderId = response.then().extract().path("orders.id");
-        response.then().body("pageInfo.limit", is(orderId.size()));
+    public void compareResponseCodeAndMessageWithError409(Response response) {
+        response.then().assertThat()
+                .statusCode(SC_CONFLICT)
+                .and()
+                .body("message", is("Этот логин уже используется"));
+
+    }
+    public void compareCodeAndMessageWithError400(Response response) {
+        response.then().assertThat()
+                .statusCode(SC_BAD_REQUEST)
+                .and()
+                .body("message", is("Недостаточно данных для создания учетной записи"));
+    }
+    public void compareLoginResponseAndBodyIdNotNull(Response response) {
+        response.then().assertThat()
+                .statusCode(SC_OK)
+                .and()
+                .body("id", notNullValue());
+    }
+    public void compareLoginResponseCodeAndBody400Message(Response response) {
+        response.then().assertThat()
+                .statusCode(SC_BAD_REQUEST)
+                .and()
+                .body("message", is("Недостаточно данных для входа"));
+    }
+    public void compareLoginResponseCodeAndBody404Message(Response response) {
+        response.then().assertThat()
+                .statusCode(SC_NOT_FOUND)
+                .and()
+                .body("message", is("Учетная запись не найдена"));
     }
 }
